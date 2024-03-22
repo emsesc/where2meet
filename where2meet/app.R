@@ -2,10 +2,11 @@ library(shiny)
 library(leaflet)
 library(dplyr)
 library(tidygeocoder)
+library(shinycssloaders)
 
 # Define UI
 ui <- fluidPage(
-  titlePanel("User Intersection Mapper"),
+  titlePanel("where2meet: Robbie Edition"),
   
   # Form for user input
   sidebarLayout(
@@ -16,6 +17,7 @@ ui <- fluidPage(
       actionButton("submit", "Submit")
     ),
     
+    # Output for maps
     # Output for maps
     mainPanel(
       selectInput("selected_name", "Select Name", choices = NULL),
@@ -111,16 +113,27 @@ server <- function(input, output, session) {
   
   # Update map
   observe({
-    proxy <- leafletProxy("map", data = user_data$data)
-    for (i in 1:(locations$count)) {
-      proxy <- addMarkers(proxy,
-                          lng = as.numeric(user_data$data[[paste0("Location_", i, "_lng")]]),
-                          lat = as.numeric(user_data$data[[paste0("Location_", i, "_lat")]]),
-                          popup = ~paste("Name:", Name, 
-                                         "<br>Date:", user_data$data[[paste0("Start_Date_", i)]], "-", user_data$data[[paste0("End_Date_", i)]],
-                                         "<br>Location:", user_data$data[[paste0("Location_", i)]])
-      )
-    }
+    withProgress(message = 'Updating Map...', value = 0, {
+      proxy <- leafletProxy("map", data = user_data$data)
+      total_locations <- locations$count
+      for (i in 1:total_locations) {
+        # Calculate progress
+        progress <- i / total_locations
+        
+        # Update progress bar
+        # setProgress(message = sprintf('Updating Map...(%d/%d)', i, total_locations), value = progress)
+        
+        incProgress(1/total_locations)
+        
+        proxy <- addMarkers(proxy,
+                            lng = as.numeric(user_data$data[[paste0("Location_", i, "_lng")]]),
+                            lat = as.numeric(user_data$data[[paste0("Location_", i, "_lat")]]),
+                            popup = ~paste("Name:", Name, 
+                                           "<br>Date:", user_data$data[[paste0("Start_Date_", i)]], "-", user_data$data[[paste0("End_Date_", i)]],
+                                           "<br>Location:", user_data$data[[paste0("Location_", i)]])
+        )
+      }
+    })
   })
   
   # Function to geocode locations and add to the dataset
