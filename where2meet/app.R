@@ -38,7 +38,7 @@ server <- function(input, output, session) {
         End_Date_1 = Sys.Date(),
         Location_1 = "New York, USA",
         stringsAsFactors = FALSE
-      )
+        )
     }
   })
   
@@ -78,12 +78,16 @@ server <- function(input, output, session) {
     )
     
     for (i in 2:(locations$count + 1)) {
+      new_entry[[paste0("Name")]] <- input[[paste0("name")]]
       new_entry[[paste0("Location_", i)]] <- input[[paste0("location_", i)]]
       new_entry[[paste0("Start_Date_", i)]] <- input[[paste0("start_date_", i)]]
       new_entry[[paste0("End_Date_", i)]] <- input[[paste0("end_date_", i)]]
     }
     
-    user_data$data <- rbind(user_data$data, new_entry)
+    print(new_entry)
+    print(user_data$data)
+    
+    user_data$data <- bind_rows(user_data$data, new_entry)
     print(paste0("user_data", user_data))
   })
   
@@ -112,7 +116,9 @@ server <- function(input, output, session) {
       proxy <- addMarkers(proxy,
                           lng = as.numeric(user_data$data[[paste0("Location_", i, "_lng")]]),
                           lat = as.numeric(user_data$data[[paste0("Location_", i, "_lat")]]),
-                          popup = ~paste("Name:", Name, "<br>Date:", paste0("Start_Date_", input$i), "-", paste0("End_Date_", input$i))
+                          popup = ~paste("Name:", Name, 
+                                         "<br>Date:", user_data$data[[paste0("Start_Date_", i)]], "-", user_data$data[[paste0("End_Date_", i)]],
+                                         "<br>Location:", user_data$data[[paste0("Location_", i)]])
       )
     }
   })
@@ -125,7 +131,7 @@ server <- function(input, output, session) {
         address = loc_name,
         method = "osm"
       )
-      print(user_data$data)
+      
       if (!is.null(loc_coords)) {
         user_data$data[[paste0("Location_", i, "_lat")]] <- loc_coords$lat
         user_data$data[[paste0("Location_", i, "_lng")]] <- loc_coords$long
